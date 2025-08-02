@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz Application</title>
+    <!-- Use Tailwind CSS for a polished and responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Quiz Container -->
+    <div id="quiz-container" class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 transform transition-transform duration-500 ease-in-out scale-100">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-extrabold text-gray-900 leading-tight">Interactive Quiz Application</h1>
+            <p class="mt-2 text-md text-gray-500">Test your knowledge!</p>
+        </header>
+
+        <!-- Quiz Area -->
+        <div id="quiz-area">
+            <!-- Question Display -->
+            <div class="bg-gray-100 rounded-lg p-5 mb-6">
+                <p id="question-text" class="text-lg font-semibold text-gray-800">Question goes here</p>
+            </div>
+
+            <!-- Answer Options -->
+            <div id="options-container" class="grid grid-cols-1 gap-4">
+                <!-- Buttons will be dynamically added here by JavaScript -->
+            </div>
+
+            <!-- Navigation and Feedback Area -->
+            <div class="flex flex-col items-center mt-6">
+                <!-- Feedback Message -->
+                <div id="feedback-message" class="text-center text-lg font-bold mb-4 opacity-0 transition-opacity duration-300"></div>
+                <!-- Next Question Button -->
+                <button id="next-button" class="w-full bg-orange-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-orange-700 transition-colors duration-300 transform scale-100 opacity-0 cursor-not-allowed" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- Score and Restart Area -->
+        <div id="result-area" class="text-center hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Quiz Complete!</h2>
+            <p id="score-text" class="text-4xl font-extrabold text-orange-600 mb-6">Your score: 0/0</p>
+            <button id="restart-button" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-blue-700 transition-colors duration-300">
+                Restart Quiz
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data - An array of objects, where each object is a question.
+        // Each question has a text, an array of options, and the correct answer index.
+        const quizData = [
+            {
+                question: "What is the capital of France?",
+                options: ["Berlin", "Madrid", "Paris", "Rome"],
+                answer: 2
+            },
+            {
+                question: "Which planet is known as the 'Red Planet'?",
+                options: ["Earth", "Mars", "Jupiter", "Venus"],
+                answer: 1
+            },
+            {
+                question: "What is the largest ocean on Earth?",
+                options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+                answer: 3
+            },
+            {
+                question: "Who painted the Mona Lisa?",
+                options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
+                answer: 2
+            },
+            {
+                question: "What is the powerhouse of the cell?",
+                options: ["Nucleus", "Ribosome", "Mitochondria", "Cytoplasm"],
+                answer: 2
+            }
+        ];
+
+        // Global variables to track the quiz state
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Get references to all necessary HTML elements
+        const quizContainer = document.getElementById('quiz-container');
+        const quizArea = document.getElementById('quiz-area');
+        const resultArea = document.getElementById('result-area');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextButton = document.getElementById('next-button');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const scoreText = document.getElementById('score-text');
+        const restartButton = document.getElementById('restart-button');
+
+        // Function to start the quiz
+        function startQuiz() {
+            // Reset state variables
+            currentQuestionIndex = 0;
+            score = 0;
+            // Show quiz area and hide result area
+            quizArea.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            // Hide the next button and feedback message
+            nextButton.classList.add('opacity-0', 'cursor-not-allowed');
+            nextButton.disabled = true;
+            feedbackMessage.classList.add('opacity-0');
+            // Display the first question
+            showQuestion();
+        }
+
+        // Function to display the current question and options
+        function showQuestion() {
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            // Get the current question object
+            const currentQuestion = quizData[currentQuestionIndex];
+            // Update the question text
+            questionText.textContent = currentQuestion.question;
+
+            // Iterate through the options and create buttons for each
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add(
+                    'bg-gray-200', 'text-gray-800', 'font-medium', 'py-3', 'px-4', 'rounded-xl',
+                    'text-left', 'transition-colors', 'duration-200', 'hover:bg-gray-300', 'disabled:opacity-50'
+                );
+                // Store the option index in a data attribute
+                button.dataset.index = index;
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Event listener for when an option button is clicked
+        optionsContainer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const selectedButton = e.target;
+                const selectedAnswerIndex = parseInt(selectedButton.dataset.index);
+                const currentQuestion = quizData[currentQuestionIndex];
+
+                // Disable all option buttons after a choice is made
+                Array.from(optionsContainer.children).forEach(button => {
+                    button.disabled = true;
+                    // Add a default disabled style
+                    button.classList.add('disabled:cursor-not-allowed');
+                });
+
+                // Check if the selected answer is correct
+                if (selectedAnswerIndex === currentQuestion.answer) {
+                    // Correct answer
+                    score++;
+                    selectedButton.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                    selectedButton.classList.add('bg-green-500', 'text-white', 'shadow-md');
+                    feedbackMessage.textContent = "Correct!";
+                    feedbackMessage.classList.remove('text-red-500');
+                    feedbackMessage.classList.add('text-green-500');
+                } else {
+                    // Incorrect answer
+                    selectedButton.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                    selectedButton.classList.add('bg-red-500', 'text-white', 'shadow-md');
+                    feedbackMessage.textContent = "Incorrect!";
+                    feedbackMessage.classList.remove('text-green-500');
+                    feedbackMessage.classList.add('text-red-500');
+
+                    // Highlight the correct answer
+                    Array.from(optionsContainer.children).forEach(button => {
+                        if (parseInt(button.dataset.index) === currentQuestion.answer) {
+                            button.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                            button.classList.add('bg-green-500', 'text-white', 'shadow-md');
+                        }
+                    });
+                }
+                
+                // Show the feedback message and the next button
+                feedbackMessage.classList.remove('opacity-0');
+                nextButton.classList.remove('opacity-0', 'cursor-not-allowed');
+                nextButton.classList.add('scale-105');
+                nextButton.disabled = false;
+            }
+        });
+
+        // Event listener for the "Next" button
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            // Check if there are more questions
+            if (currentQuestionIndex < quizData.length) {
+                // If so, show the next question
+                showQuestion();
+                // Hide the next button and feedback message for the new question
+                nextButton.classList.add('opacity-0', 'cursor-not-allowed');
+                nextButton.disabled = true;
+                nextButton.classList.remove('scale-105');
+                feedbackMessage.classList.add('opacity-0');
+            } else {
+                // If not, show the final score
+                showScore();
+            }
+        });
+
+        // Event listener for the "Restart" button
+        restartButton.addEventListener('click', startQuiz);
+
+        // Function to display the final score
+        function showScore() {
+            // Hide the quiz area and show the result area
+            quizArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            // Update the score text
+            scoreText.textContent = `Your score: ${score}/${quizData.length}`;
+        }
+
+        // Initialize the quiz when the page loads
+        document.addEventListener('DOMContentLoaded', startQuiz);
+    </script>
+</body>
+</html>
